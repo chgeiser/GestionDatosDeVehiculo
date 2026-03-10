@@ -3,6 +3,7 @@ import React, { useState } from "react";
 
 const DatosVehiculo = () => {
   const [patente, setPatente] = useState("");
+  const [vin, setVin] = useState("");
   const [vehiculo, setVehiculo] = useState(null);
 
   const buscar = async () => {
@@ -17,6 +18,26 @@ const DatosVehiculo = () => {
     const data = await response.json();
     setVehiculo(data);
   };
+
+  const buscarVIN = async () => {
+
+    const res = await fetch(
+      `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`
+    );
+
+    const data = await res.json();
+
+    const marca = data.Results.find(r => r.Variable === "Make")?.Value;
+    const modelo = data.Results.find(r => r.Variable === "Model")?.Value;
+    const anio = data.Results.find(r => r.Variable === "Model Year")?.Value;
+
+    setVehiculo({
+      marca,
+      modelo,
+      anio
+    });
+  };
+
   return (
     <>
       <input
@@ -27,6 +48,15 @@ const DatosVehiculo = () => {
       />
 
       <button onClick={buscar}>Buscar</button>
+
+      <input
+        type="text"
+        value={vin}
+        onChange={(e) => setVin(e.target.value.toUpperCase())}
+        placeholder="Ingrese VIN"
+      />
+
+      <button onClick={buscarVIN}>Buscar</button>
 
       <h3>Identificación y especificaciones técnicas</h3>
       {vehiculo && (
