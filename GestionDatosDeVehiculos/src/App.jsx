@@ -1,33 +1,51 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './App.css';
+import Bienvenida from './component/Bienvenida';
+import DatosVehiculo from './component/DatosVehiculo';
+import AlertasRecalls from './component/AlertasRecalls';
+import Danhos from './component/Danhos';
+import Emisiones from './component/Emisiones';
+import Kilometraje from './component/Kilometraje';
+import RevisionTecnica from './component/RevisionTecnica';
+import Seguridad from './component/Seguridad';
+import UsoComercial from './component/UsoComercial';
+import ValorMercado from './component/ValorMercado';
+import Menu from './component/Menu';
+import { Route, Routes } from 'react-router-dom';
+
+
 
 function App() {
-  const [count, setCount] = useState(0)
+
+    const menus = [
+    { nombre: "Bienvenidos", link: "/" },
+    { nombre: "Alerta", link: "/alertasrecalls" },
+    { nombre: "Danhos", link: "/danhos" },
+    { nombre: "Datos", link: "/datosvehiculos"},
+    { nombre: "Emisiones", link: "/emisiones"},
+    { nombre: "Kilometraje", link: "/kilometraje"},
+    { nombre: "Revision", link: "/revisionTecnica"},
+    { nombre: "Seguridad", link: "/seguridad"},
+    { nombre: "Comercial", link: "/usocomercial"},
+    { nombre: "Valor", link: "/valormercado"},
+  ];
+
+  
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+     <Menu menu={menus} />
+      <Routes>
+        <Route path="/" element={<Bienvenida />} />
+        <Route path="/alertasrecalls" element={<AlertasRecalls/>} />
+        <Route path="/danhos" element={<Danhos/>} />
+        <Route path="/datosvehiculos" element={<DatosVehiculo/>} />
+        <Route path="/emisiones" element={<Emisiones/>} />
+        <Route path="/kilometraje" element={<Kilometraje/>}/>
+        <Route path="/revisionTecnica" element={<RevisionTecnica/>}/>
+        <Route path="/seguridad" element={<Seguridad/>}/>
+        <Route path="/usocomercial" element={<UsoComercial/>}/>
+        <Route path="/valormercado" element={<ValorMercado/>}/>
+      </Routes>
     </>
   )
 }
