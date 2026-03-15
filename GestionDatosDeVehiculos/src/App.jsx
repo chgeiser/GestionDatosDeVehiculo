@@ -1,52 +1,34 @@
-import './App.css';
-import Bienvenida from './component/Bienvenida';
-import DatosVehiculo from './component/DatosVehiculo';
-import AlertasRecalls from './component/AlertasRecalls';
-import Danhos from './component/Danhos';
-import Emisiones from './component/Emisiones';
-import Kilometraje from './component/Kilometraje';
-import RevisionTecnica from './component/RevisionTecnica';
-import Seguridad from './component/Seguridad';
-import UsoComercial from './component/UsoComercial';
-import ValorMercado from './component/ValorMercado';
-import Menu from './component/Menu';
-import { Route, Routes } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuthStore } from './stores/authStore'
+import Layout from './components/common/Layout'
+import Login from './components/auth/Login'
+import Search from './components/search/Search'
+import Results from './components/results/Results'
+import Dashboard from './components/dashboard/Dashboard'
+import History from './components/history/History'
+import Billing from './components/billing/Billing'
 
-
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuthStore()
+  return isAuthenticated ? children : <Navigate to="/login" />
+}
 
 function App() {
-
-    const menus = [
-    { nombre: "Bienvenidos", link: "/" },
-    { nombre: "Alerta", link: "/alertasrecalls" },
-    { nombre: "Danhos", link: "/danhos" },
-    { nombre: "Datos", link: "/datosvehiculos"},
-    { nombre: "Emisiones", link: "/emisiones"},
-    { nombre: "Kilometraje", link: "/kilometraje"},
-    { nombre: "Revision", link: "/revisionTecnica"},
-    { nombre: "Seguridad", link: "/seguridad"},
-    { nombre: "Comercial", link: "/usocomercial"},
-    { nombre: "Valor", link: "/valormercado"},
-  ];
-
-  
-
   return (
-    <>
-     <Menu menu={menus} />
-      <Routes>
-        <Route path="/" element={<Bienvenida />} />
-        <Route path="/alertasrecalls" element={<AlertasRecalls/>} />
-        <Route path="/danhos" element={<Danhos/>} />
-        <Route path="/datosvehiculos" element={<DatosVehiculo/>} />
-        <Route path="/emisiones" element={<Emisiones/>} />
-        <Route path="/kilometraje" element={<Kilometraje/>}/>
-        <Route path="/revisionTecnica" element={<RevisionTecnica/>}/>
-        <Route path="/seguridad" element={<Seguridad/>}/>
-        <Route path="/usocomercial" element={<UsoComercial/>}/>
-        <Route path="/valormercado" element={<ValorMercado/>}/>
-      </Routes>
-    </>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Search />} />
+        <Route path="resultados/:tipo/:id" element={<Results />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="historial" element={<History />} />
+        <Route path="facturacion" element={<Billing />} />
+      </Route>
+    </Routes>
   )
 }
 
