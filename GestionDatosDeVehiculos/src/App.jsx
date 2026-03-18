@@ -1,12 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
-import Layout from './components/common/Layout'
-import Login from './components/auth/Login'
-import Search from './components/search/Search'
-import Results from './components/results/Results'
-import Dashboard from './components/dashboard/Dashboard'
-import History from './components/history/History'
-import Billing from './components/billing/Billing'
+import Layout from './component/common/Layout'
+import Login from './component/auth/Login'
+import Search from './component/search/Search'
+import Results from './component/results/Results'
+import Dashboard from './component/dashboard/Dashboard'
+import History from './component/history/History'
+import Billing from './component/billing/Billing'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
