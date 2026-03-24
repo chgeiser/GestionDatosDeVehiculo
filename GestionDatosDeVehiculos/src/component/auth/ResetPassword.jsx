@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '../../services/api'
 import { 
-  Shield, 
   Lock, 
   Eye, 
   EyeOff, 
   Loader2, 
-  CheckCircle,
-  XCircle,
-  AlertCircle
+  CheckCircle2, 
+  AlertCircle,
+  Shield,
+  ArrowLeft,
+  Check
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -23,29 +24,31 @@ export default function ResetPassword() {
     confirmPassword: ''
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isValidating, setIsValidating] = useState(true)
   const [isTokenValid, setIsTokenValid] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState({})
   
   // Validar token al cargar
   useEffect(() => {
-    if (!token) {
-      setIsValidating(false)
-      return
+    const validateToken = async () => {
+      if (!token) {
+        setIsValidating(false)
+        return
+      }
+      
+      try {
+        const response = await api.get(`/auth/validate-reset-token?token=${token}`)
+        setIsTokenValid(response.data.data)
+      } catch (err) {
+        setIsTokenValid(false)
+      } finally {
+        setIsValidating(false)
+      }
     }
     
-    api.get(`/auth/validate-reset-token?token=${token}`)
-      .then(response => {
-        setIsTokenValid(response.data.data)
-      })
-      .catch(() => {
-        setIsTokenValid(false)
-      })
-      .finally(() => {
-        setIsValidating(false)
-      })
+    validateToken()
   }, [token])
   
   const validateForm = () => {
@@ -77,7 +80,8 @@ export default function ResetPassword() {
     try {
       await api.post('/auth/reset-password', {
         token,
-        newPassword: formData.password
+        nuevaPassword: formData.password,
+        confirmarPassword: formData.confirmPassword
       })
       
       setIsSuccess(true)
@@ -89,8 +93,8 @@ export default function ResetPassword() {
       }, 3000)
       
     } catch (err) {
-      const mensaje = err.response?.data?.mensaje || 'Error al actualizar contraseña'
-      toast.error(mensaje)
+      const message = err.response?.data?.mensaje || 'Error al restablecer contraseña'
+      toast.error(message)
     } finally {
       setIsLoading(false)
     }
@@ -102,13 +106,13 @@ export default function ResetPassword() {
     if (/[a-z]/.test(password)) strength++
     if (/[A-Z]/.test(password)) strength++
     if (/\d/.test(password)) strength++
-    if (/[^a-zA-Z0-9]/.test(password)) strength++
+    if (/[^A-Za-z0-9]/.test(password)) strength++
     return strength
   }
   
   const strength = getPasswordStrength(formData.password)
-  const strengthLabels = ['Muy débil', 'Débil', 'Regular', 'Buena', 'Excelente']
-  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500']
+  const strengthLabels = ['Muy débil', 'Débil', 'Regular', 'Fuerte', 'Muy fuerte']
+  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-green-600']
   
   if (isValidating) {
     return (
@@ -120,24 +124,28 @@ export default function ResetPassword() {
   
   if (!token || !isTokenValid) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-8 h-8 text-red-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Enlace inválido</h2>
-            <p className="text-gray-600 mb-6">
-              Este enlace ha expirado o ya fue utilizado. Por favor solicita un nuevo 
-              enlace de recuperación.
-            </p>
-            <Link 
-              to="/forgot-password"
-              className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
-            >
-              Solicitar nuevo enlace
-            </Link>
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-10 h-10 text-red-600" />
           </div>
+          
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Enlace inválido o expirado
+          </h1>
+          
+          <p className="text-gray-600 mb-6">
+            El enlace de recuperación ya no es válido. Puede que haya expirado 
+            o ya haya sido utilizado.
+          </p>
+          
+          <Link 
+            to="/forgot-password"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Solicitar nuevo enlace
+          </Link>
         </div>
       </div>
     )
@@ -145,42 +153,49 @@ export default function ResetPassword() {
   
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Contraseña actualizada!</h2>
-            <p className="text-gray-600 mb-6">
-              Tu contraseña ha sido restablecida exitosamente. Serás redirigido al 
-              inicio de sesión en unos segundos...
-            </p>
-            <Link 
-              to="/login"
-              className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
-            >
-              Ir al login ahora
-            </Link>
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
+          
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            ¡Contraseña actualizada!
+          </h1>
+          
+          <p className="text-gray-600 mb-6">
+            Tu contraseña ha sido restablecida exitosamente. 
+            Serás redirigido al inicio de sesión en unos segundos...
+          </p>
+          
+          <Link 
+            to="/login"
+            className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
+          >
+            Ir al inicio de sesión ahora
+            <ArrowLeft className="w-4 h-4 rotate-180" />
+          </Link>
         </div>
       </div>
     )
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl shadow-lg mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl shadow-lg shadow-primary-200 mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Nueva Contraseña</h1>
-          <p className="text-gray-600 mt-1">Crea una contraseña segura</p>
+          <h1 className="text-2xl font-bold text-gray-900">Nueva contraseña</h1>
+          <p className="text-gray-600 mt-1">
+            Crea una contraseña segura para tu cuenta
+          </p>
         </div>
         
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        {/* Formulario */}
+        <div className="bg-white rounded-2xl shadow-xl border p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Nueva contraseña */}
             <div>
@@ -196,10 +211,10 @@ export default function ResetPassword() {
                     setFormData(prev => ({ ...prev, password: e.target.value }))
                     if (errors.password) setErrors(prev => ({ ...prev, password: null }))
                   }}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder="••••••••"
                   className={`w-full pl-10 pr-12 py-3 border-2 rounded-xl outline-none transition-all ${
                     errors.password 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100'
+                      ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100' 
                       : 'border-gray-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100'
                   }`}
                 />
@@ -215,20 +230,20 @@ export default function ResetPassword() {
               {/* Indicador de fortaleza */}
               {formData.password && (
                 <div className="mt-2">
-                  <div className="flex gap-1 h-1.5 mb-1">
+                  <div className="flex gap-1 mb-1">
                     {[1, 2, 3, 4, 5].map((level) => (
-                      <div
+                      <div 
                         key={level}
-                        className={`flex-1 rounded-full transition-colors ${
+                        className={`h-1.5 flex-1 rounded-full transition-colors ${
                           level <= strength ? strengthColors[strength - 1] : 'bg-gray-200'
                         }`}
                       />
                     ))}
                   </div>
                   <p className={`text-xs ${
-                    strength <= 2 ? 'text-red-600' : strength <= 3 ? 'text-yellow-600' : 'text-green-600'
+                    strength < 3 ? 'text-red-600' : strength < 4 ? 'text-yellow-600' : 'text-green-600'
                   }`}>
-                    Fortaleza: {strengthLabels[strength - 1] || 'Muy débil'}
+                    {strengthLabels[strength - 1] || 'Muy débil'}
                   </p>
                 </div>
               )}
@@ -239,6 +254,26 @@ export default function ResetPassword() {
                   {errors.password}
                 </p>
               )}
+              
+              {/* Requisitos */}
+              <div className="mt-3 space-y-1">
+                <PasswordRequirement 
+                  met={formData.password.length >= 8} 
+                  text="Mínimo 8 caracteres" 
+                />
+                <PasswordRequirement 
+                  met={/[a-z]/.test(formData.password)} 
+                  text="Al menos una minúscula" 
+                />
+                <PasswordRequirement 
+                  met={/[A-Z]/.test(formData.password)} 
+                  text="Al menos una mayúscula" 
+                />
+                <PasswordRequirement 
+                  met={/\d/.test(formData.password)} 
+                  text="Al menos un número" 
+                />
+              </div>
             </div>
             
             {/* Confirmar contraseña */}
@@ -255,10 +290,10 @@ export default function ResetPassword() {
                     setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))
                     if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: null }))
                   }}
-                  placeholder="Repite la contraseña"
+                  placeholder="••••••••"
                   className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl outline-none transition-all ${
-                    errors.confirmPassword
-                      ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100'
+                    errors.confirmPassword 
+                      ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100' 
                       : 'border-gray-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100'
                   }`}
                 />
@@ -273,8 +308,8 @@ export default function ResetPassword() {
             
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+              disabled={isLoading || strength < 3}
+              className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -282,12 +317,21 @@ export default function ResetPassword() {
                   Actualizando...
                 </>
               ) : (
-                'Actualizar contraseña'
+                'Restablecer contraseña'
               )}
             </button>
           </form>
         </div>
       </div>
+    </div>
+  )
+}
+
+function PasswordRequirement({ met, text }) {
+  return (
+    <div className={`flex items-center gap-2 text-xs ${met ? 'text-green-600' : 'text-gray-400'}`}>
+      <Check className={`w-3.5 h-3.5 ${met ? 'opacity-100' : 'opacity-0'}`} />
+      <span>{text}</span>
     </div>
   )
 }

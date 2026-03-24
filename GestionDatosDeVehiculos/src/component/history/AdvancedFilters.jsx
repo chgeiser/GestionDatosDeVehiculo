@@ -1,289 +1,245 @@
+// src/components/history/AdvancedFilters.jsx
 import { useState } from 'react'
-import { X, SlidersHorizontal, Calendar, Coins, Database, Filter } from 'lucide-react'
-
-const TIPOS_CONSULTA = [
-  { value: '', label: 'Todos los tipos' },
-  { value: 'ROBO', label: 'Estado de Robo' },
-  { value: 'GRAVAMENES', label: 'Gravámenes' },
-  { value: 'COMPLETA', label: 'Consulta Completa' }
-]
+import { 
+  X, 
+  Save, 
+  Filter, 
+  ChevronDown,
+  CreditCard,
+  AlertTriangle,
+  CheckCircle,
+  FileText
+} from 'lucide-react'
 
 const RESULTADOS = [
-  { value: '', label: 'Todos los resultados' },
-  { value: 'ROBADO', label: 'Vehículo robado' },
-  { value: 'LIMPIO', label: 'Sin novedades' },
-  { value: 'CON_GRAVAMEN', label: 'Con gravámenes' }
+  { id: 'ROBADO', label: 'Con denuncia de robo', icon: AlertTriangle, color: 'text-red-600' },
+  { id: 'LIMPIO', label: 'Sin novedades', icon: CheckCircle, color: 'text-green-600' },
+  { id: 'CON_GRAVAMEN', label: 'Con gravámenes', icon: FileText, color: 'text-amber-600' }
 ]
 
-const FUENTES = [
-  { value: '', label: 'Todas las fuentes' },
-  { value: 'AUTODATA', label: 'Autodata' },
-  { value: 'CHECK_AUTOMOTRIZ', label: 'Check Automotriz' },
-  { value: 'CACHE', label: 'Caché local' }
-]
-
-export default function AdvancedFilters({ filters, onChange, onApply, onClear, isOpen, onClose }) {
-  const [localFilters, setLocalFilters] = useState(filters)
+export default function AdvancedFilters({ 
+  filters, 
+  setFilters, 
+  onSaveFilter,
+  savedFilters,
+  onApplySavedFilter,
+  onDeleteSavedFilter
+}) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [filterName, setFilterName] = useState('')
   
-  const handleChange = (field, value) => {
-    setLocalFilters(prev => ({ ...prev, [field]: value }))
+  const hasAdvancedFilters = filters.creditosMin || filters.creditosMax || filters.resultado
+  
+  const handleSave = () => {
+    if (!filterName.trim()) return
+    onSaveFilter(filterName, filters)
+    setShowSaveModal(false)
+    setFilterName('')
   }
   
-  const handleApply = () => {
-    onApply(localFilters)
-    onClose()
-  }
-  
-  const handleClear = () => {
-    const empty = {
-      search: '',
-      tipo: '',
-      fechaDesde: '',
-      fechaHasta: '',
-      resultado: '',
+  const clearAdvancedFilters = () => {
+    setFilters(prev => ({
+      ...prev,
       creditosMin: '',
       creditosMax: '',
-      cacheHit: '',
-      fuente: ''
-    }
-    setLocalFilters(empty)
-    onClear()
+      resultado: ''
+    }))
   }
   
-  const activeFiltersCount = Object.values(localFilters).filter(v => v !== '').length
-  
-  if (!isOpen) return null
-  
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold">Filtros Avanzados</h3>
-            {activeFiltersCount > 0 && (
-              <span className="px-2 py-0.5 bg-primary-100 text-primary-700 text-xs font-medium rounded-full">
-                {activeFiltersCount}
-              </span>
-            )}
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Búsqueda */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Buscar patente o VIN
-            </label>
+    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+      {/* Header básico siempre visible */}
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative flex-1 max-w-xs">
             <input
               type="text"
-              value={localFilters.search}
-              onChange={(e) => handleChange('search', e.target.value)}
-              placeholder="Ej: BBCL34 o 3GNDA13D8S1234567"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none"
+              placeholder="Buscar patente o VIN..."
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none"
             />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           </div>
           
-          {/* Dos columnas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tipo de consulta */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo de consulta
-              </label>
-              <select
-                value={localFilters.tipo}
-                onChange={(e) => handleChange('tipo', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none bg-white"
-              >
-                {TIPOS_CONSULTA.map(t => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+          {/* Filtros guardados rápidos */}
+          {savedFilters?.length > 0 && (
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                Filtros guardados
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              <div className="absolute top-full left-0 mt-1 w-56 bg-white border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                {savedFilters.map((filtro) => (
+                  <div 
+                    key={filtro.id}
+                    className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer group/item"
+                  >
+                    <span 
+                      className="text-sm flex-1"
+                      onClick={() => onApplySavedFilter(filtro)}
+                    >
+                      {filtro.nombre}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDeleteSavedFilter(filtro.id)
+                      }}
+                      className="opacity-0 group-hover/item:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 ))}
-              </select>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {hasAdvancedFilters && (
+            <button
+              onClick={clearAdvancedFilters}
+              className="text-sm text-red-600 hover:text-red-700 px-3 py-2"
+            >
+              Limpiar avanzados
+            </button>
+          )}
+          
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              isExpanded || hasAdvancedFilters
+                ? 'bg-primary-100 text-primary-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Filtros avanzados
+            {hasAdvancedFilters && (
+              <span className="w-2 h-2 bg-primary-500 rounded-full" />
+            )}
+            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+      </div>
+      
+      {/* Panel expandido */}
+      {isExpanded && (
+        <div className="border-t px-4 py-4 space-y-4 animate-slide-in">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Rango de créditos */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <CreditCard className="w-4 h-4" />
+                Rango de créditos
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="Mín"
+                  value={filters.creditosMin}
+                  onChange={(e) => setFilters(prev => ({ ...prev, creditosMin: e.target.value }))}
+                  className="w-24 px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 outline-none"
+                />
+                <span className="text-gray-400">-</span>
+                <input
+                  type="number"
+                  placeholder="Máx"
+                  value={filters.creditosMax}
+                  onChange={(e) => setFilters(prev => ({ ...prev, creditosMax: e.target.value }))}
+                  className="w-24 px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 outline-none"
+                />
+              </div>
             </div>
             
             {/* Resultado */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Resultado obtenido
-              </label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Resultado</label>
               <select
-                value={localFilters.resultado}
-                onChange={(e) => handleChange('resultado', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none bg-white"
+                value={filters.resultado}
+                onChange={(e) => setFilters(prev => ({ ...prev, resultado: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 outline-none bg-white"
               >
-                {RESULTADOS.map(r => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          {/* Rango de fechas */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Rango de fechas
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <input
-                  type="date"
-                  value={localFilters.fechaDesde}
-                  onChange={(e) => handleChange('fechaDesde', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">Desde</p>
-              </div>
-              <div>
-                <input
-                  type="date"
-                  value={localFilters.fechaHasta}
-                  onChange={(e) => handleChange('fechaHasta', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">Hasta</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Rango de créditos */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <Coins className="w-4 h-4" />
-              Créditos consumidos
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={localFilters.creditosMin}
-                  onChange={(e) => handleChange('creditosMin', e.target.value)}
-                  placeholder="Mín"
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none"
-                />
-              </div>
-              <div>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={localFilters.creditosMax}
-                  onChange={(e) => handleChange('creditosMax', e.target.value)}
-                  placeholder="Máx"
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none"
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Fuentes y caché */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <Database className="w-4 h-4" />
-                Fuente de datos
-              </label>
-              <select
-                value={localFilters.fuente}
-                onChange={(e) => handleChange('fuente', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none bg-white"
-              >
-                {FUENTES.map(f => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
-                ))}
+                <option value="">Todos los resultados</option>
+                {RESULTADOS.map((res) => {
+                  const Icon = res.icon
+                  return (
+                    <option key={res.id} value={res.id}>
+                      {res.label}
+                    </option>
+                  )
+                })}
               </select>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo de respuesta
-              </label>
-              <select
-                value={localFilters.cacheHit}
-                onChange={(e) => handleChange('cacheHit', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none bg-white"
-              >
-                <option value="">Todas</option>
-                <option value="true">Desde caché</option>
-                <option value="false">Consulta en vivo</option>
-              </select>
+            {/* Fechas */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Período</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={filters.fechaDesde}
+                  onChange={(e) => setFilters(prev => ({ ...prev, fechaDesde: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 outline-none text-sm"
+                />
+                <span className="text-gray-400">-</span>
+                <input
+                  type="date"
+                  value={filters.fechaHasta}
+                  onChange={(e) => setFilters(prev => ({ ...prev, fechaHasta: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 outline-none text-sm"
+                />
+              </div>
             </div>
           </div>
           
-          {/* Filtros guardados */}
-          <div className="border-t pt-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">Filtros guardados</p>
-            <div className="flex flex-wrap gap-2">
-              <SavedFilterChip name="Última semana" onClick={() => {
-                const hoy = new Date().toISOString().split('T')[0]
-                const semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-                setLocalFilters(prev => ({
-                  ...prev,
-                  fechaDesde: semanaAtras,
-                  fechaHasta: hoy
-                }))
-              }} />
-              <SavedFilterChip name="Solo robos" onClick={() => {
-                setLocalFilters(prev => ({
-                  ...prev,
-                  tipo: 'ROBO',
-                  resultado: 'ROBADO'
-                }))
-              }} />
-              <SavedFilterChip name="Consultas caras (3+ créditos)" onClick={() => {
-                setLocalFilters(prev => ({
-                  ...prev,
-                  creditosMin: '3'
-                }))
-              }} />
+          {/* Botones de acción */}
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <button
+              onClick={() => setShowSaveModal(true)}
+              className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              Guardar filtro
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal guardar filtro */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Guardar filtro</h3>
+            <input
+              type="text"
+              placeholder="Nombre del filtro (ej: Consultas robos este mes)"
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:border-primary-500 outline-none mb-4"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowSaveModal(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!filterName.trim()}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              >
+                Guardar
+              </button>
             </div>
           </div>
         </div>
-        
-        {/* Footer */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex justify-between">
-          <button
-            onClick={handleClear}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
-          >
-            Limpiar todo
-          </button>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleApply}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium flex items-center gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Aplicar filtros
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
-  )
-}
-
-function SavedFilterChip({ name, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-full transition-colors"
-    >
-      {name}
-    </button>
   )
 }
